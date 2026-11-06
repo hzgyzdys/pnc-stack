@@ -20,16 +20,20 @@ def generate_launch_description():
         get_package_share_directory('pnc_bringup'), 'config', 'control.yaml')
 
     params = LaunchConfiguration('params_file')
+    # Optional second file for the reference path (a test scenario); later
+    # files override earlier ones.
+    path_params = LaunchConfiguration('path_params_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     return LaunchDescription([
         DeclareLaunchArgument('params_file', default_value=default_params),
+        DeclareLaunchArgument('path_params_file', default_value=default_params),
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         Node(
             package='pnc_control',
             executable='reference_path',
             name='reference_path',
-            parameters=[params, {'use_sim_time': use_sim_time}],
+            parameters=[params, path_params, {'use_sim_time': use_sim_time}],
             output='screen',
         ),
         Node(

@@ -165,9 +165,33 @@ lap of S2): max CTE after settling 0.033 m, stops within goal tolerance.
 
 ### Gazebo (Phase 1)
 
+Pure Pursuit, 1 m/s, CTE scored after the first 5 s. Every run reaches the
+end of its path without touching a wall or cone.
+
 | Scenario | RMS CTE | Max CTE | Notes |
 |---|---|---|---|
-| S2 circle, R = 3 m, 1 m/s | 0.0054 m | 0.0272 m | One lap, stops 0.07 m from the start |
+| S1 straight, 0.5 m offset | 0.0035 m | 0.0150 m | |
+| S2 circle, R = 3 m | 0.0057 m | 0.0282 m | One lap |
+| S3 narrow passage | 0.028 m | 0.075 m | Error peaks at the S-bend curvature jumps |
+| S4 U-turn, R = 1.2 m | 0.079 m | 0.134 m | Cuts the inside of the turn |
+| S5 cone slalom | 0.074 m | 0.117 m | |
+| S7 parallel parking | — | — | Forward approach only until Reeds–Shepp (Phase 2) |
+
+The corner cutting in S3–S5 is the expected Pure Pursuit behaviour: the
+lookahead point (1.3 m at 1 m/s) is already on the next arc before the car
+reaches it. These are the baseline numbers for Stanley and MPC.
+
+### Scenario worlds
+
+A scenario's reference path is written once, as lines and arcs, in
+`pnc_bringup/config/scenarios/<name>.yaml` (`shape: segments`, parsed by
+`pnc_core::parseSegment` and sampled by `pnc_core::makeSegmentPath`).
+`tools/make_scenario_worlds.py` reads the same file and places the painted
+centre line, walls and cones relative to the path, so the world and the path
+cannot drift apart. Clearances: S3 0.3 m each side of the car, S4 0.55 m,
+S5 0.3 m to each cone. CI runs every scenario headless with
+`tools/sim_smoke_test.py`, which fails on a collision (the car stops short of
+the path end) or a cross-track error above about half the clearance.
 
 ### Simulation model
 
@@ -176,9 +200,8 @@ geometry matches `VehicleParams` exactly: wheelbase 0.33 m, track 0.25 m,
 wheel radius 0.05 m, steering limit 0.45 rad, rear-wheel drive. The model frame
 is the rear-axle centre. Gazebo's `AckermannSteering` system turns the Twist
 into wheel speeds and steering angles; `OdometryPublisher` publishes ground
-truth for that frame, bridged to `/odom`. The world is a flat plane with no
-sensors or shadows so it runs on an integrated GPU, and with `headless:=true`
-in CI, where `tools/sim_smoke_test.py` checks one lap on every push.
+truth for that frame, bridged to `/odom`. The worlds have no sensors or shadows
+so they run on an integrated GPU, and with `headless:=true` in CI.
 
 The controller node integrates its own previous speed command rather than the
 measured speed. With the measured speed, a drive that delivers about 1 % less

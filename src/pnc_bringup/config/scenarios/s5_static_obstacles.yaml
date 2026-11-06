@@ -1,0 +1,11 @@
+# S5: slalom around cones. Until the planner exists (Phase 2) the avoiding
+# path is fixed here; the cones sit 0.6 m inside each bend.
+# World: pnc_sim/worlds/s5_static_obstacles.sdf
+reference_path:
+  ros__parameters:
+    shape: segments
+    frame_id: odom
+    start_x: 0.0
+    start_y: 0.0
+    start_yaw: 0.0
+    segments: ["line 2", "arc 2.5 30", "arc 2.5 -60", "arc 2.5 60", "arc 2.5 -60", "arc 2.5 30", "line 2"]

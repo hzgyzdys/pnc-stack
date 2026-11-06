@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "nav_msgs/msg/path.hpp"
 #include "pnc_core/math_utils.hpp"
@@ -35,6 +36,28 @@ class ReferencePathNode : public rclcpp::Node {
       pnc_core::computeHeadings(path);
     } else if (shape == "straight") {
       path = pnc_core::makeStraightPath(0.0, 0.0, 0.0, size / n, static_cast<std::size_t>(n), 0.0);
+    } else if (shape == "segments") {
+      // Lines and arcs chained from a start pose, e.g. for the test scenarios
+      // in pnc_bringup/config/scenarios.
+      const double x0 = declare_parameter<double>("start_x", 0.0);
+      const double y0 = declare_parameter<double>("start_y", 0.0);
+      const double yaw0 = declare_parameter<double>("start_yaw", 0.0);
+      const double ds = declare_parameter<double>("resolution", 0.05);
+      const auto texts =
+          declare_parameter<std::vector<std::string>>("segments", std::vector<std::string>{});
+      std::vector<pnc_core::PathSegment> segments;
+      for (const auto& t : texts) {
+        const auto seg = pnc_core::parseSegment(t);
+        if (!seg) {
+          throw std::invalid_argument("bad segment '" + t +
+                                      "', expected 'line <len>' or 'arc <radius> <deg>'");
+        }
+        segments.push_back(*seg);
+      }
+      if (segments.empty()) {
+        throw std::invalid_argument("shape 'segments' needs a non-empty 'segments' list");
+      }
+      path = pnc_core::makeSegmentPath(x0, y0, yaw0, segments, ds, 0.0);
     } else {
       throw std::invalid_argument("unknown shape: " + shape);
     }

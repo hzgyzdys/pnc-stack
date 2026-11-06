@@ -57,13 +57,28 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           colcon test
           colcon test-result --verbose
-      - name: Gazebo smoke test (headless, one lap of the circle)
+      - name: Gazebo smoke tests (headless, every scenario)
         run: |
           source install/setup.bash
-          ros2 launch pnc_bringup sim_tracking.launch.py headless:=true > sim.log 2>&1 &
-          rc=0
-          timeout 240 python3 tools/sim_smoke_test.py --timeout 90 || rc=$?
-          pkill -INT -f "ros2 launch" || true
-          sleep 3
-          if [ "$rc" -ne 0 ]; then tail -50 sim.log; fi
-          exit $rc
+          failed=""
+          for sc in s1_straight_offset s2_circle s3_narrow_passage s4_u_turn \
+                    s5_static_obstacles s7_parallel_parking; do
+            echo "::group::$sc"
+            ros2 launch pnc_bringup sim_tracking.launch.py scenario:=$sc headless:=true \
+              > sim_$sc.log 2>&1 &
+            # Safety limits, not performance targets: about half the clearance
+            # between the car and the nearest wall or cone in each world.
+            case $sc in
+              s3_narrow_passage|s5_static_obstacles) max_cte=0.15 ;;
+              s4_u_turn) max_cte=0.25 ;;
+              *) max_cte=0.05 ;;
+            esac
+            rc=0
+            timeout 240 python3 tools/sim_smoke_test.py --timeout 90 --max-cte $max_cte || rc=$?
+            pkill -INT -f "ros2 launch" || true
+            sleep 4
+            pkill -9 -f "gz sim|parameter_bridge|tracking_controller|reference_path" || true
+            if [ "$rc" -ne 0 ]; then tail -50 sim_$sc.log; failed="$failed $sc"; fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then echo "failed:$failed"; exit 1; fi

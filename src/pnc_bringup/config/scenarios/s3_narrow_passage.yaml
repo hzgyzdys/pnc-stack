@@ -1,0 +1,10 @@
+# S3: S-bend into a corridor with 0.3 m clearance each side of the car
+# (car 0.29 m wide, corridor 0.90 m). World: pnc_sim/worlds/s3_narrow_passage.sdf
+reference_path:
+  ros__parameters:
+    shape: segments
+    frame_id: odom
+    start_x: 0.0
+    start_y: 0.0
+    start_yaw: 0.0
+    segments: ["line 3", "arc 3 25", "arc 3 -25", "line 6"]

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <sstream>
 
 #include "pnc_core/math_utils.hpp"
 
@@ -87,6 +88,75 @@ Path makeCirclePath(double cx, double cy, double r, std::size_t n, double v_ref)
         {cx + r * std::cos(th), cy + r * std::sin(th), normalizeAngle(th + kPi / 2.0), v_ref});
   }
   return p;
+}
+
+std::optional<PathSegment> parseSegment(const std::string& text) {
+  std::istringstream in(text);
+  std::string kind;
+  in >> kind;
+  if (kind == "line") {
+    double length = 0.0;
+    if (!(in >> length) || length <= 0.0) {
+      return std::nullopt;
+    }
+    return PathSegment{length, 0.0};
+  }
+  if (kind == "arc") {
+    double radius = 0.0;
+    double angle_deg = 0.0;
+    if (!(in >> radius >> angle_deg) || radius <= 0.0 || angle_deg == 0.0) {
+      return std::nullopt;
+    }
+    const double angle = angle_deg * kPi / 180.0;
+    return PathSegment{radius * std::abs(angle), std::copysign(1.0 / radius, angle)};
+  }
+  return std::nullopt;
+}
+
+Path makeSegmentPath(double x0, double y0, double yaw0, const std::vector<PathSegment>& segments,
+                     double ds, double v_ref) {
+  Path path;
+  if (ds <= 0.0) {
+    return path;
+  }
+  double x = x0;
+  double y = y0;
+  double yaw = yaw0;
+  path.push_back({x, y, normalizeAngle(yaw), v_ref});
+
+  for (const auto& seg : segments) {
+    if (seg.length <= 0.0) {
+      continue;
+    }
+    const auto n = static_cast<std::size_t>(std::ceil(seg.length / ds - 1e-9));
+    const double step = seg.length / static_cast<double>(n);
+    const double k = seg.curvature;
+    // Pose after travelling s along this segment from (x, y, yaw).
+    auto poseAt = [&](double s) {
+      Waypoint w{};
+      if (std::abs(k) < 1e-12) {
+        w.x = x + s * std::cos(yaw);
+        w.y = y + s * std::sin(yaw);
+        w.yaw = yaw;
+      } else {
+        w.yaw = yaw + k * s;
+        w.x = x + (std::sin(w.yaw) - std::sin(yaw)) / k;
+        w.y = y - (std::cos(w.yaw) - std::cos(yaw)) / k;
+      }
+      return w;
+    };
+    for (std::size_t i = 1; i <= n; ++i) {
+      Waypoint w = poseAt(step * static_cast<double>(i));
+      w.yaw = normalizeAngle(w.yaw);
+      w.v_ref = v_ref;
+      path.push_back(w);
+    }
+    const Waypoint end = poseAt(seg.length);
+    x = end.x;
+    y = end.y;
+    yaw = end.yaw;
+  }
+  return path;
 }
 
 }  // namespace pnc_core

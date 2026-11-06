@@ -1,0 +1,10 @@
+# S1: straight line, the car starts 0.5 m to the right of it (convergence,
+# overshoot). World: pnc_sim/worlds/s1_straight_offset.sdf
+reference_path:
+  ros__parameters:
+    shape: segments
+    frame_id: odom
+    start_x: 0.0
+    start_y: 0.5
+    start_yaw: 0.0
+    segments: ["line 12"]

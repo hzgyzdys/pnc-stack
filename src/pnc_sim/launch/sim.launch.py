@@ -8,7 +8,7 @@ ROS topics after launch:
   /tf       odom -> base_link
 
 Arguments:
-  world:=<path to .sdf>   default: pnc_sim/worlds/flat.sdf
+  world:=<path to .sdf>   default: pnc_sim/worlds/s2_circle.sdf
   headless:=true          run the physics server only, no GUI window
 """
 
@@ -40,7 +40,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument(
-            'world', default_value=os.path.join(share, 'worlds', 'flat.sdf')),
+            'world', default_value=os.path.join(share, 'worlds', 's2_circle.sdf')),
         DeclareLaunchArgument('headless', default_value='false'),
         # Lets the world find model://ackermann_car.
         AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', os.path.join(share, 'models')),
