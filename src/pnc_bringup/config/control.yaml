@@ -1,0 +1,32 @@
+# Parameters for the tracking controller. Vehicle values approximate a 1:10
+# Ackermann car; update them to match the Gazebo model in Phase 1.
+tracking_controller:
+  ros__parameters:
+    control_rate_hz: 50.0
+    reference_speed: 1.0
+    odom_timeout_s: 0.5
+    goal_tolerance: 0.2
+
+    controller:
+      type: pure_pursuit   # pure_pursuit | stanley (Phase 1) | mpc (Phase 1)
+
+    vehicle:
+      wheelbase: 0.33
+      max_steer: 0.45
+      max_steer_rate: 2.0
+      max_accel: 2.0
+      max_decel: 3.0
+      max_speed: 2.0
+
+    pure_pursuit:
+      lookahead_gain: 0.8
+      lookahead_min: 0.5
+      lookahead_max: 3.0
+      speed_kp: 1.5
+
+reference_path:
+  ros__parameters:
+    shape: circle          # circle | straight
+    frame_id: odom
+    size: 3.0              # circle radius or line length [m]
+    num_points: 400

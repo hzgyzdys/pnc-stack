@@ -1,0 +1,6 @@
+---
+BasedOnStyle: Google
+ColumnLimit: 100
+IncludeBlocks: Regroup
+DerivePointerAlignment: false
+PointerAlignment: Left
