@@ -1,5 +1,5 @@
-# Parameters for the tracking controller. Vehicle values approximate a 1:10
-# Ackermann car; update them to match the Gazebo model in Phase 1.
+# Parameters for the tracking controller. Vehicle values match the 1:10
+# Ackermann car in pnc_sim/models/ackermann_car/model.sdf; keep them in sync.
 tracking_controller:
   ros__parameters:
     control_rate_hz: 50.0
