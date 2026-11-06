@@ -12,8 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       clang-tidy \
     && rm -rf /var/lib/apt/lists/*
 
-# Phase 1 adds the simulator here:
-#   ros-jazzy-ros-gz ros-jazzy-navigation2 ros-jazzy-nav2-bringup
+# Gazebo (ros_gz) is installed by rosdep below, from pnc_sim/package.xml.
+# Phase 1 adds Nav2 here: ros-jazzy-navigation2 ros-jazzy-nav2-bringup
 
 WORKDIR /ws
 COPY src/ src/

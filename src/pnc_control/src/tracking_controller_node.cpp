@@ -130,7 +130,10 @@ class TrackingControllerNode : public rclcpp::Node {
     last_odom_time_ = now();
   }
 
-  void publishStop() { cmd_pub_->publish(geometry_msgs::msg::Twist{}); }
+  void publishStop() {
+    v_cmd_ = 0.0;
+    cmd_pub_->publish(geometry_msgs::msg::Twist{});
+  }
 
   void onTimer() {
     if (!state_ || path_.empty() || goal_reached_) {
@@ -159,11 +162,14 @@ class TrackingControllerNode : public rclcpp::Node {
     const pnc_core::ControlCommand cmd = controller_->computeCommand(*state_, path_, dt_);
 
     // The Gazebo Ackermann plugin takes (v, omega). Integrate the acceleration
-    // command once and convert steering angle to yaw rate.
-    const double v_cmd = pnc_core::clamp(state_->v + cmd.accel * dt_, 0.0, vehicle_.max_speed);
+    // command into the speed command and convert steering angle to yaw rate.
+    // Integrating our own previous command (not the measured speed) makes the
+    // speed loop an integrator, so a drive that delivers slightly less than
+    // commanded (wheel slip, odometry filtering) still reaches v_ref.
+    v_cmd_ = pnc_core::clamp(v_cmd_ + cmd.accel * dt_, 0.0, vehicle_.max_speed);
     geometry_msgs::msg::Twist twist;
-    twist.linear.x = v_cmd;
-    twist.angular.z = model_->yawRate(v_cmd, cmd.steer);
+    twist.linear.x = v_cmd_;
+    twist.angular.z = model_->yawRate(v_cmd_, cmd.steer);
     cmd_pub_->publish(twist);
 
     std_msgs::msg::Float64 cte;
@@ -178,6 +184,7 @@ class TrackingControllerNode : public rclcpp::Node {
   std::optional<pnc_core::State> state_;
   rclcpp::Time last_odom_time_{0, 0, RCL_ROS_TIME};
   double dt_{0.02};
+  double v_cmd_{0.0};  // speed command sent last cycle [m/s]
   double reference_speed_{1.0};
   double odom_timeout_s_{0.5};
   double goal_tolerance_{0.2};

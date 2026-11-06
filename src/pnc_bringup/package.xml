@@ -12,6 +12,7 @@
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>pnc_control</exec_depend>
+  <exec_depend>pnc_sim</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

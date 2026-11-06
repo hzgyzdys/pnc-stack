@@ -57,3 +57,13 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           colcon test
           colcon test-result --verbose
+      - name: Gazebo smoke test (headless, one lap of the circle)
+        run: |
+          source install/setup.bash
+          ros2 launch pnc_bringup sim_tracking.launch.py headless:=true > sim.log 2>&1 &
+          rc=0
+          timeout 240 python3 tools/sim_smoke_test.py --timeout 90 || rc=$?
+          pkill -INT -f "ros2 launch" || true
+          sleep 3
+          if [ "$rc" -ne 0 ]; then tail -50 sim.log; fi
+          exit $rc

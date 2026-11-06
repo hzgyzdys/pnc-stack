@@ -1,8 +1,9 @@
 # Copyright (c) 2026 Hu Zhiguo. MIT License.
 """Launch the reference path publisher and the tracking controller.
 
-The simulator is started separately (sim.launch.py is added in Phase 1), so
-this file can be reused unchanged on the real vehicle.
+The simulator is started separately (pnc_sim/launch/sim.launch.py, or
+sim_tracking.launch.py for both at once), so this file can be reused unchanged
+on the real vehicle.
 """
 
 import os

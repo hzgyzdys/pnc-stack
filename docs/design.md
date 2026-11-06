@@ -1,6 +1,6 @@
 # pnc-stack — Design Document
 
-Status: v0.1 (Phase 0). Owner: Hu Zhiguo. Last updated: 2026-11-05.
+Status: v0.2 (Phase 1 started). Owner: Hu Zhiguo. Last updated: 2026-11-06.
 
 ## 1. Goal
 
@@ -73,6 +73,7 @@ parameters. Consequences:
 |---|---|---|
 | `pnc_core` | cmake | Types, kinematic bicycle model, path utilities, controllers; unit tests; `track_sim` tool |
 | `pnc_control` | ament_cmake | `tracking_controller` and `reference_path` nodes (also loadable as components) |
+| `pnc_sim` | ament_cmake | Gazebo Harmonic car model and world, ros_gz bridge config, `sim.launch.py` |
 | `pnc_planning` | ament_cmake | *Phase 2*: Hybrid A* global planner node, QP trajectory optimiser |
 | `pnc_bringup` | ament_cmake | Launch files and parameter YAML |
 | `pnc_eval` | ament_python | *Phase 3*: scenario runner, rosbag metrics, plots |
@@ -162,6 +163,28 @@ replace them in Phase 1.
 End-to-end check through ROS 2 (both nodes, unicycle stand-in simulator, one
 lap of S2): max CTE after settling 0.033 m, stops within goal tolerance.
 
+### Gazebo (Phase 1)
+
+| Scenario | RMS CTE | Max CTE | Notes |
+|---|---|---|---|
+| S2 circle, R = 3 m, 1 m/s | 0.0054 m | 0.0272 m | One lap, stops 0.07 m from the start |
+
+### Simulation model
+
+`pnc_sim` defines the car in SDF rather than adapting an example, so its
+geometry matches `VehicleParams` exactly: wheelbase 0.33 m, track 0.25 m,
+wheel radius 0.05 m, steering limit 0.45 rad, rear-wheel drive. The model frame
+is the rear-axle centre. Gazebo's `AckermannSteering` system turns the Twist
+into wheel speeds and steering angles; `OdometryPublisher` publishes ground
+truth for that frame, bridged to `/odom`. The world is a flat plane with no
+sensors or shadows so it runs on an integrated GPU, and with `headless:=true`
+in CI, where `tools/sim_smoke_test.py` checks one lap on every push.
+
+The controller node integrates its own previous speed command rather than the
+measured speed. With the measured speed, a drive that delivers about 1 % less
+than commanded left the car at 0.83 m/s instead of 1.0 m/s; integrating the
+command removes that steady-state error.
+
 ## 7. Roadmap
 
 - **Phase 0 (Nov 2026 – Jan 2027)** — Environment, ROS 2 C++ fundamentals,
@@ -176,9 +199,6 @@ lap of S2): max CTE after settling 0.033 m, stops within goal tolerance.
 
 ## 8. Open questions
 
-- Gazebo vehicle model: build one from SDF or adapt an existing Ackermann
-  example? Decide in Phase 1 after checking which models load cleanly in
-  Harmonic.
 - MPC solver: acados (faster, more setup) vs CasADi + IPOPT (slower, easier).
   Start with CasADi for correctness, then port to acados if the 99th-percentile
   cycle time exceeds 10 ms.
